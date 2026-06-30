@@ -10,6 +10,7 @@
   "scripts": {
     "precache": "node scripts/precache-models.js",
     "ingest": "node scripts/ingest-corpus.js",
+    "build-dataset": "node scripts/build-dataset.js",
     "finetune": "node scripts/finetune.js",
     "start": "node src/index.js",
     "demo": "node src/index.js --demo",

@@ -17,26 +17,86 @@ tactical adjustment plus a fix-it drill - grounded in a local knowledge base and
 - **Offline + private** - youth performance data never touches a server. Cloud
   incumbents (e.g. FootballGPT) can't make that claim.
 - **Learns your team** - `finetune()` produces a `.gguf` adapter from your season
-  of observations; week 1 gives generic advice, week 8 names your actual players
-  and recurring weaknesses.
+  of observations; the base model gives generic advice, the team adapter speaks
+  in your own players and patterns.
 - **Voice-first** - you can't type on a touchline. Speak; get a spoken card back.
 
-## Architecture (engine only - no frontend yet)
+## Real use case
+
+> **Riverside U13, away game, 0-1 down at half-time.**
+>
+> The coach can't type on a cold touchline with no signal. He taps record and
+> mutters: *"They keep getting at us down our left, our right-back's caught too
+> high, and we're losing every second ball in midfield."*
+>
+> Fifteen seconds later, on his phone, with airplane mode on:
+>
+> ```
+> HALF-TIME CARD
+>   A goal down and overloaded on our left flank.
+>
+>   WHAT'S HURTING US
+>     - Overload down our left        (getting at us down our left)
+>     - Second balls lost in midfield (losing every second ball)
+>
+>   CHANGES TO MAKE NOW
+>     1. Drop Leo to double up on their right winger
+>          -> Make it 3-v-3 and stop the overlap
+>     2. Push Aisha higher to the contact point
+>          -> Be first to the drop
+>
+>   NEXT TRAINING - DRILL
+>     Wide recovery - Leo and Tom defend a 3-v-2 on the wing
+>
+>   Grounded in: Wide overload on one flank - Losing second balls in midfield
+> ```
+>
+> The advice names **his** players (Leo, Aisha, Tom), because the model was
+> fine-tuned on Riverside's season - and none of it left the device.
+
+The pro game has analysts for this. Grassroots has admin apps (scheduling,
+payments) below and unaffordable cloud platforms above - nothing for tactics.
+Gaffer fills that gap, on a phone, offline, for free.
+
+## Architecture flow
 
 ```
-voice / text  ->  ASR (Whisper)  ->  signal extraction (LLM)
-                                          |
-                          RAG retrieve (GTE-Large + cosine)
-                                          |
-                              Half-Time Card (LLM + Zod-validated JSON)
-                                          |
-                                   TTS readback (Supertonic)
+                         ON-DEVICE (QVAC SDK) - no cloud, no network
 
-   season JSONL  ->  finetune()  ->  LoRA adapter  ->  hot-loaded into the LLM
+  MATCH DAY
+  ---------
+   Coach speaks ──► [ ASR: Whisper + VAD ] ──► transcript text
+   (or types)                                       │
+                                                     ▼
+                              [ LLM: signal extraction ]  (Qwen3, json_schema)
+                                    observation ──► tactical signals
+                                    e.g. { pattern:"overload", zone:"left", severity:4 }
+                                                     │
+                                                     ▼
+                              [ RAG retrieve ]  (GTE-Large embed + cosine search)
+                                    signals ──► top-k tactical snippets
+                                    from data/corpus (laws + coaching methodology)
+                                                     │
+                                                     ▼
+                              [ LLM: compose card ]  (Qwen3 + json_schema, Zod-validated)
+                                    signals + grounding ──► Half-Time Card JSON
+                                                     │
+                                          ┌──────────┴──────────┐
+                                          ▼                     ▼
+                                  render to screen      [ TTS: Supertonic ]
+                                  (one glanceable card)  spoken read-back .wav
+
+  PRE-SEASON / WEEKLY  (once, not per match)
+  -----------------------------------------
+   data/training/*.jsonl ──► [ finetune(): on-device LoRA ] ──► trained-lora-adapter.gguf
+   (your season of                qwen3-fabric, ~160 steps          │
+    observations)                                                   ▼
+                                                    hot-loaded via modelConfig.lora
+                                                    so cards name YOUR players
 ```
 
-The codebase is layered so the QVAC SDK is touched in exactly one place
-(`src/core/engine.js`) and the football logic stays pure and testable:
+The layering keeps the QVAC SDK touched in exactly one place
+(`src/core/engine.js`); the football logic stays pure and testable.
 
 ### Module map
 | Path | Responsibility |
@@ -47,12 +107,14 @@ The codebase is layered so the QVAC SDK is touched in exactly one place
 | `src/rag/*` | Embedding-backed vector store + retriever (SDK-agnostic) |
 | `src/domain/*` | Football logic, prompts, Zod + JSON schemas, Card rendering (no SDK) |
 | `src/pipeline/matchSession.js` | Orchestrates the end-to-end flow |
-| `scripts/*` | Model pre-cache, corpus ingest, fine-tune runner |
+| `scripts/*` | Model pre-cache, corpus ingest, dataset build, fine-tune runner |
 | `data/corpus/` | Tactical knowledge base (RAG source) |
 | `data/training/` | Season observations (fine-tune source) |
 
 ## Models
-All models are resolved from the QVAC distributed registry and run on-device.
+All models resolve from the QVAC distributed registry (open GGUF weights,
+originally from Hugging Face, delivered over QVAC's peer-to-peer Hypercore) and
+run on-device.
 
 | Role | Model | Notes |
 |---|---|---|
@@ -65,22 +127,33 @@ Structured output uses QVAC's constrained `json_schema` response format, so even
 small on-device model cannot emit an out-of-enum value or omit a required field;
 Zod then validates defensively after parsing.
 
+## Performance note
+Everything except training is interactive (seconds): model load is a cached
+one-time download, RAG ingest is a handful of embeds, and a Half-Time Card is a
+single inference pass. **On-device fine-tuning is the only heavy step** - a full
+forward+backward over a 1.7B model on CPU, ~160 steps, roughly half an hour. It
+runs once per season (or weekly), not per match, so it never sits in the
+match-day path.
+
 ## Setup
 Requires **Node.js >= 22.17** (QVAC SDK requirement).
 
 ```bash
 npm install
 cp .env.example .env
-npm run precache      # pre-download models (gigabytes) before going offline
-npm run ingest        # build the RAG index from data/corpus
-npm run demo          # generic advice (base model)
-npm run finetune      # train the team LoRA adapter from data/training
-npm run demo:team     # advice that names your own players (uses the adapter)
+npm run precache       # pre-download models (gigabytes) before going offline
+npm run ingest         # build the RAG index from data/corpus
+npm run demo           # generic advice (base model)
+
+# the differentiator (slow, once per season):
+npm run build-dataset  # generate the team training set from scripts/build-dataset.js
+npm run finetune       # train the team LoRA adapter (~30 min on CPU)
+npm run demo:team      # advice that names your own players (uses the adapter)
 ```
 
 The first model load downloads weights from the QVAC registry; after that it runs
 fully offline. The first `loadModel` of a process can occasionally hit a worker
-cold-start timeout - re-run once and it proceeds.
+cold-start timeout - the engine retries automatically.
 
 ### CLI
 ```bash
@@ -92,11 +165,12 @@ node src/index.js --speak "..."     # also synthesize a spoken card (data/cache/
 ```
 
 ## Status
-Backend engine working end-to-end on-device: observation -> tactical signals -> RAG
-grounding -> Half-Time Card. On-device LoRA fine-tuning produces a team adapter.
-Frontend intentionally deferred. Mobile (Expo) is a stretch - the same QVAC code
-targets iOS/Android, but desktop Node is the build target for the sprint (no mobile
-emulator support).
+Backend engine works end-to-end on-device: observation -> tactical signals -> RAG
+grounding -> Half-Time Card, with optional spoken read-back. On-device LoRA
+fine-tuning completes and produces a team adapter that shifts card output toward
+named players. Frontend intentionally deferred. Mobile (Expo) is a stretch - the
+same QVAC code targets iOS/Android, but desktop Node is the build target for the
+sprint (no mobile emulator support).
 
 ## License
 Apache-2.0.

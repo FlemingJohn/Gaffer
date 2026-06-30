@@ -87,11 +87,18 @@ export const FINETUNE = {
   adapterOutDir: 'data/adapters',
   checkpointDir: 'data/adapters/checkpoints',
   loraModules: 'attn_q,attn_k,attn_v,attn_o,ffn_gate,ffn_up,ffn_down',
-  numberOfEpochs: 3,
+  // Card-format examples run ~300 tokens (system roster + observation + JSON card).
+  // The finetune default truncates at 128 and silently skips longer rows, so raise it.
+  contextLength: 512,
+  // Small season set (~10 examples): a few passes imprint the squad roster.
+  numberOfEpochs: 4,
   learningRate: 1e-4,
   lrMin: 1e-8,
   assistantLossOnly: true,
-  checkpointSaveSteps: 5,
+  // 0 disables intermediate checkpoints. Writing a full model+optimizer snapshot
+  // every few steps dominated wall-clock on the first run; we only need the final
+  // adapter from outputParametersDir.
+  checkpointSaveSteps: 0,
 };
 
 /** Where the embedded RAG index is persisted after `npm run ingest`. */

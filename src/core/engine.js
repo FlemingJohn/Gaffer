@@ -76,15 +76,32 @@ export async function loadNamedModel(spec, opts = {}) {
   }
   const modelConfig = { ...(spec.modelConfig || {}), ...(opts.extraConfig || {}) };
   const label = opts.label || spec.constant;
+  const attempts = opts.attempts ?? 3;
+
   log.step(`loading model ${label} …`);
-  const modelId = await sdk.loadModel({
-    modelSrc,
-    modelConfig,
-    onProgress: opts.onProgress || makeProgress(label),
-  });
-  _loaded.add(modelId);
-  log.ok(`loaded ${label}`);
-  return modelId;
+  let lastErr;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      const modelId = await sdk.loadModel({
+        modelSrc,
+        modelConfig,
+        onProgress: opts.onProgress || makeProgress(label),
+      });
+      _loaded.add(modelId);
+      log.ok(`loaded ${label}`);
+      return modelId;
+    } catch (e) {
+      lastErr = e;
+      // The Bare worker's first handshake intermittently exceeds the SDK's 30s
+      // RPC-init window on a cold start; the SDK tears the worker down, so a
+      // fresh loadModel re-spawns it. Retry only that transient failure.
+      const transient = /RPC_INIT_TIMEOUT|timed out|worker/i.test(e?.message || '');
+      if (!transient || i === attempts) throw e;
+      log.warn(`load ${label} failed (${e.message.split('\n')[0]}); retry ${i}/${attempts - 1}`);
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+  throw lastErr;
 }
 
 /** Resolve a bare model constant value by name (e.g. for vadModelSrc). */

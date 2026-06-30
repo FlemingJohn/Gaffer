@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/banner.svg" alt="Gaffer - the offline, on-device AI assistant coach that learns your team" width="100%"/>
+</p>
+
 # Gaffer
 
 **The offline, on-device AI assistant coach that learns your team.**
@@ -58,41 +62,76 @@ The pro game has analysts for this. Grassroots has admin apps (scheduling,
 payments) below and unaffordable cloud platforms above - nothing for tactics.
 Gaffer fills that gap, on a phone, offline, for free.
 
-## Architecture flow
+## Architecture (Mermaid)
 
+```mermaid
+flowchart TD
+    subgraph device["ON-DEVICE - QVAC SDK (no cloud, no network)"]
+        direction TB
+        IN["Coach voice / text"]
+
+        subgraph match["Match-day pipeline"]
+            direction TB
+            ASR["ASR: Whisper + Silero VAD<br/>transcribe()"]
+            SIG["LLM: signal extraction<br/>Qwen3 + json_schema"]
+            RAG["RAG retrieve<br/>GTE-Large embed + cosine"]
+            CARD["LLM: compose card<br/>Qwen3 + json_schema, Zod-validated"]
+            RENDER["Render Half-Time Card"]
+            TTS["TTS: Supertonic<br/>textToSpeech()"]
+        end
+
+        subgraph train["Pre-season / weekly (once, not per match)"]
+            direction TB
+            DATA["data/training/*.jsonl<br/>your season of observations"]
+            FT["finetune(): on-device LoRA<br/>qwen3-fabric, ~160 steps"]
+            ADAPTER["trained-lora-adapter.gguf"]
+        end
+
+        CORPUS["data/corpus<br/>laws + coaching methodology"]
+    end
+
+    IN --> ASR --> SIG --> RAG --> CARD --> RENDER
+    CARD --> TTS
+    CORPUS -. embedded once .-> RAG
+    DATA --> FT --> ADAPTER
+    ADAPTER -. "hot-loaded via modelConfig.lora" .-> SIG
+    ADAPTER -. "hot-loaded via modelConfig.lora" .-> CARD
+
+    classDef llm fill:#1f6feb,stroke:#0b3d91,color:#fff
+    classDef io fill:#2ea043,stroke:#176f2c,color:#fff
+    classDef store fill:#6e40c9,stroke:#3f1d8a,color:#fff
+    class SIG,CARD,ASR,TTS,FT llm
+    class IN,RENDER io
+    class CORPUS,DATA,ADAPTER store
 ```
-                         ON-DEVICE (QVAC SDK) - no cloud, no network
 
-  MATCH DAY
-  ---------
-   Coach speaks ──► [ ASR: Whisper + VAD ] ──► transcript text
-   (or types)                                       │
-                                                     ▼
-                              [ LLM: signal extraction ]  (Qwen3, json_schema)
-                                    observation ──► tactical signals
-                                    e.g. { pattern:"overload", zone:"left", severity:4 }
-                                                     │
-                                                     ▼
-                              [ RAG retrieve ]  (GTE-Large embed + cosine search)
-                                    signals ──► top-k tactical snippets
-                                    from data/corpus (laws + coaching methodology)
-                                                     │
-                                                     ▼
-                              [ LLM: compose card ]  (Qwen3 + json_schema, Zod-validated)
-                                    signals + grounding ──► Half-Time Card JSON
-                                                     │
-                                          ┌──────────┴──────────┐
-                                          ▼                     ▼
-                                  render to screen      [ TTS: Supertonic ]
-                                  (one glanceable card)  spoken read-back .wav
+## User flow (Mermaid)
 
-  PRE-SEASON / WEEKLY  (once, not per match)
-  -----------------------------------------
-   data/training/*.jsonl ──► [ finetune(): on-device LoRA ] ──► trained-lora-adapter.gguf
-   (your season of                qwen3-fabric, ~160 steps          │
-    observations)                                                   ▼
-                                                    hot-loaded via modelConfig.lora
-                                                    so cards name YOUR players
+```mermaid
+sequenceDiagram
+    actor Coach
+    participant App as Gaffer (phone, offline)
+    participant ASR as Whisper
+    participant LLM as Qwen3 (+ team adapter)
+    participant RAG as RAG store
+
+    Note over Coach,RAG: Pre-season, once - the coach feeds a season of notes
+    Coach->>App: npm run finetune (season JSONL)
+    App->>LLM: on-device LoRA training (~30 min)
+    LLM-->>App: trained-lora-adapter.gguf
+
+    Note over Coach,RAG: Match day, half-time - airplane mode on
+    Coach->>App: taps record, speaks the problem
+    App->>ASR: audio
+    ASR-->>App: transcript
+    App->>LLM: extract tactical signals (json_schema)
+    LLM-->>App: signals [overload/left, second-balls...]
+    App->>RAG: retrieve grounding for signals
+    RAG-->>App: top-k tactical snippets
+    App->>LLM: compose Half-Time Card (signals + grounding)
+    LLM-->>App: card JSON naming the squad
+    App-->>Coach: one-screen card + spoken read-back
+    Note over Coach: ~15 seconds, nothing left the device
 ```
 
 The layering keeps the QVAC SDK touched in exactly one place

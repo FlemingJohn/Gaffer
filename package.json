@@ -1,0 +1,22 @@
+{
+  "name": "gaffer",
+  "version": "0.1.0",
+  "description": "Gaffer — the offline, on-device AI assistant coach that learns your team. Built on the Tether QVAC SDK.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.17"
+  },
+  "scripts": {
+    "precache": "node scripts/precache-models.js",
+    "ingest": "node scripts/ingest-corpus.js",
+    "finetune": "node scripts/finetune.js",
+    "start": "node src/index.js",
+    "demo": "node src/index.js --demo",
+    "demo:team": "node src/index.js --adapter --demo"
+  },
+  "dependencies": {
+    "@qvac/sdk": "^0.13.5",
+    "zod": "^3.23.8"
+  }
+}

@@ -1,4 +1,5 @@
 import { ScoreBar } from '../components/common.jsx';
+import { IconMic } from '../components/icons.jsx';
 import { TEAM, MATCH } from '../data/sample.js';
 
 export default function MatchHome({ onRecord }) {
@@ -15,7 +16,7 @@ export default function MatchHome({ onRecord }) {
 
       <div className="mic-wrap">
         <button className="mic" onClick={onRecord}>
-          <span className="glyph">◉</span>
+          <span className="glyph"><IconMic /></span>
           Hold to speak
         </button>
         <p className="mic-caption">Tap and tell me what you're seeing on the pitch.</p>

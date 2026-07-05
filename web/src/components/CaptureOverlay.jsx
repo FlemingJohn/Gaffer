@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { SignalChip } from './common.jsx';
+import { IconBall, IconStop } from './icons.jsx';
 import { TRANSCRIPT, SIGNALS, CARD } from '../data/sample.js';
 import { startRecording } from '../lib/recorder.js';
 import { transcribe, session } from '../lib/api.js';
@@ -78,7 +79,7 @@ export default function CaptureOverlay({ online, onCancel, onDone }) {
   return (
     <div className="overlay">
       <div className="topbar" style={{ borderBottom: '1px solid var(--line)', padding: '4px 0 14px' }}>
-        <span className="brand"><span className="mark">⚽ GAFFER</span></span>
+        <span className="brand"><IconBall width={20} height={20} /><span className="mark">GAFFER</span></span>
         <span className="offline" style={{ color: 'var(--red-card)', borderColor: 'var(--red-card)' }}>
           <span className="dot" style={{ background: 'var(--red-card)' }} /> REC <span className="data">{mmss}</span>
         </span>
@@ -105,8 +106,8 @@ export default function CaptureOverlay({ online, onCancel, onDone }) {
 
       <div style={{ marginTop: 'auto' }} className="btn-row">
         <button className="btn btn-ghost" onClick={onCancel} disabled={busy}>Cancel</button>
-        <button className="btn btn-primary" onClick={handleStop} disabled={busy}>
-          {busy ? '…' : '■ Stop & advise'}
+        <button className="btn btn-primary icon-btn" onClick={handleStop} disabled={busy}>
+          {busy ? 'Working…' : (<><IconStop /> Stop &amp; advise</>)}
         </button>
       </div>
     </div>

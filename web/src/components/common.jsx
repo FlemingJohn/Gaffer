@@ -1,10 +1,12 @@
 // Small shared presentational pieces used across pages.
+import { IconBall, IconMatch, IconHistory, IconTeam } from './icons.jsx';
 
 export function TopBar({ theme, onToggleTheme, right }) {
   return (
     <div className="topbar">
       <div className="brand">
-        <span className="mark">⚽ GAFFER</span>
+        <IconBall width={22} height={22} />
+        <span className="mark">GAFFER</span>
       </div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         {right ?? (
@@ -13,7 +15,7 @@ export function TopBar({ theme, onToggleTheme, right }) {
           </span>
         )}
         <button className="floodswitch" onClick={onToggleTheme}>
-          {theme === 'floodlit' ? '☾ Floodlit' : '☀ Daylight'}
+          {theme === 'floodlit' ? 'Floodlit' : 'Daylight'}
         </button>
       </div>
     </div>
@@ -61,9 +63,9 @@ export function ConfidenceMeter({ value }) {
 
 export function BottomNav({ active, onChange }) {
   const tabs = [
-    { id: 'match', ic: '⌂', label: 'Match' },
-    { id: 'history', ic: '◷', label: 'History' },
-    { id: 'team', ic: '⚙', label: 'Team' },
+    { id: 'match', Icon: IconMatch, label: 'Match' },
+    { id: 'history', Icon: IconHistory, label: 'History' },
+    { id: 'team', Icon: IconTeam, label: 'Team' },
   ];
   return (
     <nav className="nav">
@@ -73,7 +75,7 @@ export function BottomNav({ active, onChange }) {
           className={active === t.id ? 'active' : ''}
           onClick={() => onChange(t.id)}
         >
-          <span className="ic">{t.ic}</span>
+          <span className="ic"><t.Icon /></span>
           {t.label}
         </button>
       ))}

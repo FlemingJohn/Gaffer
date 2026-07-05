@@ -122,7 +122,7 @@ body {
     gap: 20px;
     align-items: center; /* centre the content column in the wide pane */
   }
-  .screen > * { width: 100%; max-width: 900px; }
+  .screen > * { width: 100%; max-width: 980px; }
 
   /* nav becomes a vertical left rail */
   .nav {
@@ -233,6 +233,8 @@ body {
 .btn-ghost { background: transparent; color: var(--chalk-dim); }
 .btn-row { display: flex; gap: 10px; }
 .btn-row .btn { flex: 1; }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.icon-btn svg { flex: none; }
 
 /* ===== Mic (the hero) ===== */
 .mic-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 18px 0; }
@@ -341,6 +343,11 @@ body {
   border: 1px solid var(--card-edge); color: var(--chalk);
 }
 .board-key { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+/* card + tactics board: stacked on mobile, side-by-side on desktop */
+.card-panes { display: grid; gap: 16px; width: 100%; }
+@media (min-width: 900px) {
+  .card-panes { grid-template-columns: minmax(0, 1fr) 400px; align-items: start; }
+}
 /* keep the pitch a sensible size even in a wide column (full width on mobile) */
 .tactics { max-width: 400px; margin: 12px auto 0; }
 .tactics svg { display: block; width: 100%; }

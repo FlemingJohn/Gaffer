@@ -131,7 +131,14 @@ app.post(
 
 async function main() {
   await initEngine();
-  app.listen(PORT, () => log.ok(`bridge listening on http://localhost:${PORT}`));
+  const server = app.listen(PORT, () => log.ok(`bridge listening on http://localhost:${PORT}`));
+  server.on('error', (e) => {
+    if (e.code === 'EADDRINUSE') {
+      log.error(`Port ${PORT} is already in use — another "npm run server" is likely running. Stop it first (only one bridge should run).`);
+      process.exit(1);
+    }
+    throw e;
+  });
   // Warm the Bare worker once (via a single sequential load) so the first real
   // request doesn't pay the cold-start timeout and concurrent loads don't race.
   try {

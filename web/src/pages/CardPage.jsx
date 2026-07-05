@@ -1,18 +1,20 @@
 import { useMemo, useState } from 'react';
 import HalfTimeCard from '../components/HalfTimeCard.jsx';
 import TacticsBoard from '../components/TacticsBoard.jsx';
-import { CARD, TEAM } from '../data/sample.js';
+import { CARD } from '../data/sample.js';
 import { FORMATION_KEYS, formationLabel } from '../data/formations.js';
 import { IconSpeaker, IconRedo, IconCheck } from '../components/icons.jsx';
 import { deriveBoard } from '../lib/board.js';
+import { useGaffer } from '../lib/store.js';
 
 export default function CardPage({ onBack, card = CARD, speak }) {
+  const { team, saveMatch } = useGaffer();
   // The AI picks a formation on the card; default the board to it (fall back to
   // the team's usual shape). The tabs let you override what's rendered.
-  const suggested = card.formation || TEAM.formation;
+  const suggested = card.formation || team.formation;
   const [formation, setFormation] = useState(suggested);
-  const board = useMemo(() => deriveBoard(card, TEAM, formation), [card, formation]);
-  const showTeam = formation === TEAM.formation; // player names fit only the real shape
+  const board = useMemo(() => deriveBoard(card, team, formation), [card, team, formation]);
+  const showTeam = formation === team.formation; // player names fit only the real shape
 
   return (
     <div className="screen">
@@ -65,7 +67,7 @@ export default function CardPage({ onBack, card = CARD, speak }) {
 
       <div className="btn-row">
         <button className="btn btn-outline icon-btn" onClick={onBack}><IconRedo /> Re-ask</button>
-        <button className="btn btn-primary icon-btn" onClick={onBack}><IconCheck /> Done</button>
+        <button className="btn btn-primary icon-btn" onClick={() => { saveMatch(card); onBack(); }}><IconCheck /> Save to match</button>
       </div>
     </div>
   );

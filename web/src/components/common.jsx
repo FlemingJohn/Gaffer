@@ -23,11 +23,10 @@ export function TopBar({ theme, onToggleTheme, right }) {
 }
 
 export function ScoreBar({ match }) {
-  const [h, a] = match.score.split('–');
   return (
     <div className="scorebar">
       <div className="team home">{match.home}</div>
-      <div className="score data">{h}–{a}</div>
+      <div className="score data">{match.homeScore}–{match.awayScore}</div>
       <div className="team away">{match.away}</div>
       <div className="phase">{match.phase}</div>
     </div>

@@ -1,23 +1,24 @@
 // Sample data mirroring exactly what the engine produces, so the UI is a true
 // skin over the real pipeline. Swap these for /api calls once the bridge is wired.
 
-export const TEAM = {
+// Seed values used only on first run; after that the live state lives in
+// localStorage (see lib/store.js). `squad` is ORDERED to the formation
+// positions (index 0 = GK, 1 = LB, …), which is how the board places names.
+export const SEED_TEAM = {
   name: 'Riverside U13',
-  squad: ['Tom', 'Kai', 'Sam', 'Daniel', 'Marcus', 'Aisha', 'Leo', 'Ben'],
+  formation: '4-4-2-diamond',
+  squad: ['Jack', 'Tom', 'Sam', 'Daniel', 'Kai', 'Marcus', 'Aisha', 'Ollie', 'Leo', 'Ben', 'Charlie'],
   seasonNotes: 12,
   lastTrained: '3 days ago',
   adapterActive: true,
-  // The shape Gaffer knows this team plays, and where each player sits
-  // (roster maps a name -> index into FORMATIONS[formation]). Drives the board.
-  formation: '4-4-2-diamond',
-  roster: { Tom: 1, Sam: 2, Daniel: 3, Kai: 4, Marcus: 5, Aisha: 6, Leo: 8, Ben: 9 },
 };
 
-export const MATCH = {
+export const SEED_MATCH = {
   home: 'Riverside',
   away: 'Oakwood',
-  score: '0–1',
-  phase: 'Half-time',
+  homeScore: 0,
+  awayScore: 0,
+  phase: '1st half',
 };
 
 // The exact shape of domain/schema.js HalftimeCard.
@@ -46,9 +47,5 @@ export const SIGNALS = [
 export const TRANSCRIPT =
   'they keep getting at us down our left, right-back caught too high, losing every second ball…';
 
-export const HISTORY = [
-  { opp: 'Oakwood', score: '0–1', result: 'l', date: 'Today' },
-  { opp: 'Hillside', score: '3–1', result: 'w', date: 'Sat' },
-  { opp: 'Fairview', score: '2–2', result: 'd', date: 'Last wk' },
-  { opp: 'Meadow Rvrs', score: '1–0', result: 'w', date: '2 wks' },
-];
+// No seed history — it fills with the coach's real matches (saved from a card,
+// or added manually on the History page).

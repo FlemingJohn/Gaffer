@@ -71,23 +71,22 @@ function directionFor(action, base) {
  */
 /**
  * @param {object} card - HalftimeCard (may include an AI-chosen `formation`)
- * @param {object} team - { formation, roster: { name: positionIndex } }
+ * @param {object} team - { formation, squad: string[] } (squad ordered to positions)
  * @param {string} [override] - render this shape instead (from the tab selector)
  */
 export function deriveBoard(card, team, override) {
   // Priority: explicit tab override → the AI's pick → the team's default shape.
   const formation = override || card?.formation || team?.formation || '4-4-2-diamond';
   const positions = FORMATIONS[formation] || FORMATIONS['4-4-2-diamond'];
-  const roster = team?.roster || {};
+  const squad = team?.squad || [];
   // Player names + name→arrow matching only make sense on the team's real shape.
   const useRoster = formation === team?.formation;
 
   const names = {};
   if (useRoster) {
-    for (const [name, idx] of Object.entries(roster)) {
-      const p = positions[idx];
-      if (p) names[`${p.role}#${idx}`] = name;
-    }
+    positions.forEach((p, i) => {
+      if (squad[i]) names[`${p.role}#${i}`] = squad[i];
+    });
   }
 
   const arrows = [];
@@ -96,9 +95,9 @@ export function deriveBoard(card, team, override) {
     let idx;
     let label;
     if (useRoster) {
-      const player = (adj.players || []).find((p) => roster[p] != null);
+      const player = (adj.players || []).find((p) => squad.includes(p));
       if (player != null) {
-        idx = roster[player];
+        idx = squad.indexOf(player);
         label = player;
       }
     }

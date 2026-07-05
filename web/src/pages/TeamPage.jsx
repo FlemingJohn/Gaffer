@@ -1,10 +1,18 @@
 import { useState } from 'react';
-import { PlayerToken } from '../components/common.jsx';
-import { TEAM } from '../data/sample.js';
+import { useGaffer } from '../lib/store.js';
+import { FORMATION_KEYS, formationLabel } from '../data/formations.js';
 
 export default function TeamPage() {
+  const { team, addPlayer, removePlayer, setFormation } = useGaffer();
+  const [name, setName] = useState('');
   const [training, setTraining] = useState(false);
   const [progress, setProgress] = useState(0);
+
+  function submit(e) {
+    e.preventDefault();
+    addPlayer(name);
+    setName('');
+  }
 
   function train() {
     setTraining(true);
@@ -24,22 +32,47 @@ export default function TeamPage() {
   return (
     <div className="screen">
       <div className="section-title">
-        <h1 className="display" style={{ fontSize: 26 }}>{TEAM.name}</h1>
+        <h1 className="display" style={{ fontSize: 26 }}>{team.name}</h1>
       </div>
 
       <div>
-        <span className="eyebrow">Squad</span>
-        <div className="squad" style={{ marginTop: 8 }}>
-          {TEAM.squad.map((p) => (
-            <PlayerToken key={p} name={p} />
+        <span className="eyebrow">Squad · {team.squad.length}</span>
+        <div className="squad-list" style={{ marginTop: 8 }}>
+          {team.squad.map((p, i) => (
+            <span className="squad-chip" key={p}>
+              <span className="squad-num data">{i + 1}</span>
+              {p}
+              <button className="squad-x" onClick={() => removePlayer(p)} aria-label={`remove ${p}`}>×</button>
+            </span>
+          ))}
+        </div>
+        <form className="squad-add" onSubmit={submit}>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Add a player…"
+            maxLength={24}
+          />
+          <button className="btn btn-outline" type="submit" disabled={!name.trim()}>Add</button>
+        </form>
+        <p className="squad-hint">Order = position (1 GK, then back line, midfield, forwards). This is how the board places names.</p>
+      </div>
+
+      <div>
+        <span className="eyebrow">Usual shape</span>
+        <div className="formation-tabs">
+          {FORMATION_KEYS.map((k) => (
+            <button key={k} className={`ftab ${k === team.formation ? 'on' : ''}`} onClick={() => setFormation(k)}>
+              {formationLabel(k)}
+            </button>
           ))}
         </div>
       </div>
 
       <div>
-        <span className="eyebrow">Season memory · {TEAM.seasonNotes} notes</span>
+        <span className="eyebrow">Season memory · {team.seasonNotes} notes</span>
         <div className="meter" style={{ marginTop: 8 }}>
-          <i style={{ width: `${Math.min(TEAM.seasonNotes * 7, 100)}%` }} />
+          <i style={{ width: `${Math.min(team.seasonNotes * 7, 100)}%` }} />
         </div>
       </div>
 
@@ -47,25 +80,6 @@ export default function TeamPage() {
         {training ? `Training… ${progress}%` : 'Train Gaffer on your season'}
         <span className="sub">{training ? 'on-device · nothing leaves the phone' : '~30 min · on-device'}</span>
       </button>
-
-      <div className="status-row">
-        <span className="chip"><span className="dot" /> Last trained: {TEAM.lastTrained}</span>
-        <span className="chip"><span className="dot" /> adapter active</span>
-      </div>
-
-      <div>
-        <span className="eyebrow">Base vs your team</span>
-        <div className="beforeafter" style={{ marginTop: 8 }}>
-          <div>
-            <div className="lbl">Before</div>
-            <div>“Drop the <b>left-back</b> to double up.”</div>
-          </div>
-          <div className="after">
-            <div className="lbl">After (learns your team)</div>
-            <div>“Drop <b>Leo</b> to double up — cover for <b>Tom</b>.”</div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -62,6 +62,8 @@ export const Drill = z.object({
 export const HalftimeCard = z.object({
   /** One-line read of the game state. */
   summary: z.string().min(3),
+  /** The shape Gaffer recommends for the second half (chosen by the model). */
+  formation: z.string().optional().catch(undefined),
   /** Problems, most urgent first (render trims to the top few). */
   problems: z.array(z.object({
     issue: z.string().min(3),

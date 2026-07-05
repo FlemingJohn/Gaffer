@@ -35,9 +35,16 @@ appears in the team history, reference it by name to show you know THIS team.
 COACHING KNOWLEDGE:
 ${retrievedContext || '(no specific knowledge retrieved — rely on sound general principles)'}
 
+Also choose the SHAPE that best fixes the problems, from exactly this list:
+["4-4-2-diamond","4-3-3","4-4-2","3-5-2","4-2-3-1","4-1-4-1","3-4-3","5-3-2","4-5-1"].
+Guidance: add a spare centre-back (3-5-2 / 5-3-2) against wing overloads or to
+protect a lead; go 4-5-1 / 4-1-4-1 to shore up midfield and sit deeper;
+4-3-3 / 4-2-3-1 / 3-4-3 to commit more forward when chasing a game.
+
 Output ONLY a JSON object matching this shape (no prose, no markdown):
 {
   "summary": string,
+  "formation": one of the shapes listed above,
   "problems": [{ "issue": string, "evidence": string }],   // max 3, most urgent first
   "adjustments": [{ "action": string, "rationale": string, "players": [string] }], // max 3
   "drill": { "name": string, "focus": string, "description": string },

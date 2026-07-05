@@ -38,12 +38,18 @@ export const SIGNALS_JSON_SCHEMA = {
   },
 };
 
+// The shapes the model may choose from (mirrors web/src/data/formations.js).
+export const FORMATION_KEYS = [
+  '4-4-2-diamond', '4-3-3', '4-4-2', '3-5-2', '4-2-3-1', '4-1-4-1', '3-4-3', '5-3-2', '4-5-1',
+];
+
 export const CARD_JSON_SCHEMA = {
   name: 'halftime_card',
   schema: {
     type: 'object',
     properties: {
       summary: { type: 'string' },
+      formation: { type: 'string', enum: FORMATION_KEYS },
       problems: {
         type: 'array',
         items: {
@@ -82,7 +88,7 @@ export const CARD_JSON_SCHEMA = {
       grounding: { type: 'array', items: { type: 'string' } },
       confidence: { type: 'integer', minimum: 1, maximum: 5 },
     },
-    required: ['summary', 'problems', 'adjustments', 'drill', 'grounding', 'confidence'],
+    required: ['summary', 'formation', 'problems', 'adjustments', 'drill', 'grounding', 'confidence'],
     additionalProperties: false,
   },
 };

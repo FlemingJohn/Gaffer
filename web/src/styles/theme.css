@@ -334,6 +334,12 @@ body {
   background: var(--touchline); border: 1px solid var(--line); color: var(--chalk-dim);
 }
 .ftab.on { background: var(--volt); color: var(--volt-ink); border-color: var(--volt); }
+.suggest {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--volt) 16%, transparent);
+  border: 1px solid var(--card-edge); color: var(--chalk);
+}
 .board-key { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 /* keep the pitch a sensible size even in a wide column (full width on mobile) */
 .tactics { max-width: 400px; margin: 12px auto 0; }

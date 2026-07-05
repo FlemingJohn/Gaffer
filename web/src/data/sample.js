@@ -23,6 +23,7 @@ export const MATCH = {
 // The exact shape of domain/schema.js HalftimeCard.
 export const CARD = {
   summary: 'A goal down and overloaded on our left flank.',
+  formation: '4-4-2-diamond',
   problems: [
     { issue: 'Overload down our left', evidence: 'getting at us down our left', severity: 4 },
     { issue: 'Second balls lost in midfield', evidence: 'losing every second ball', severity: 3 },

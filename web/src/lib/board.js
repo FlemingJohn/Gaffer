@@ -69,29 +69,41 @@ function directionFor(action, base) {
  * @param {object} team - { formation, roster: { name: positionIndex } }
  * @returns {{ formation: string, names: Record<string,string>, arrows: Array }}
  */
-export function deriveBoard(card, team) {
-  const formation = team?.formation || '4-4-2-diamond';
-  const positions = FORMATIONS[formation] || [];
+/**
+ * @param {object} card - HalftimeCard (may include an AI-chosen `formation`)
+ * @param {object} team - { formation, roster: { name: positionIndex } }
+ * @param {string} [override] - render this shape instead (from the tab selector)
+ */
+export function deriveBoard(card, team, override) {
+  // Priority: explicit tab override → the AI's pick → the team's default shape.
+  const formation = override || card?.formation || team?.formation || '4-4-2-diamond';
+  const positions = FORMATIONS[formation] || FORMATIONS['4-4-2-diamond'];
   const roster = team?.roster || {};
+  // Player names + name→arrow matching only make sense on the team's real shape.
+  const useRoster = formation === team?.formation;
 
   const names = {};
-  for (const [name, idx] of Object.entries(roster)) {
-    const p = positions[idx];
-    if (p) names[`${p.role}#${idx}`] = name;
+  if (useRoster) {
+    for (const [name, idx] of Object.entries(roster)) {
+      const p = positions[idx];
+      if (p) names[`${p.role}#${idx}`] = name;
+    }
   }
 
   const arrows = [];
   for (const adj of card?.adjustments || []) {
     const text = `${adj.action} ${adj.rationale || ''}`;
-    // Prefer a named player we know; otherwise fall back to a position keyword.
-    const player = (adj.players || []).find((p) => roster[p] != null);
     let idx;
     let label;
-    if (player != null) {
-      idx = roster[player];
-      label = player;
-    } else {
-      const hit = findRoleIndex(text, positions);
+    if (useRoster) {
+      const player = (adj.players || []).find((p) => roster[p] != null);
+      if (player != null) {
+        idx = roster[player];
+        label = player;
+      }
+    }
+    if (idx == null) {
+      const hit = findRoleIndex(text, positions); // position keyword fallback
       if (hit) {
         idx = hit.i;
         label = hit.label;

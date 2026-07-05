@@ -6,10 +6,12 @@ import { FORMATION_KEYS, formationLabel } from '../data/formations.js';
 import { deriveBoard } from '../lib/board.js';
 
 export default function CardPage({ onBack, card = CARD, speak }) {
-  // Board is derived from the card + the team's shape: formation, names, arrows.
-  const board = useMemo(() => deriveBoard(card, TEAM), [card]);
-  const [formation, setFormation] = useState(board.formation);
-  const showTeam = formation === board.formation; // names/arrows only fit the real shape
+  // The AI picks a formation on the card; default the board to it (fall back to
+  // the team's usual shape). The tabs let you override what's rendered.
+  const suggested = card.formation || TEAM.formation;
+  const [formation, setFormation] = useState(suggested);
+  const board = useMemo(() => deriveBoard(card, TEAM, formation), [card, formation]);
+  const showTeam = formation === TEAM.formation; // player names fit only the real shape
 
   return (
     <div className="screen">
@@ -21,7 +23,12 @@ export default function CardPage({ onBack, card = CARD, speak }) {
       <HalfTimeCard card={card} />
 
       <div className="card">
-        <span className="eyebrow">Shape &amp; movement</span>
+        <div className="section-title">
+          <span className="eyebrow">Shape &amp; movement</span>
+          {card.formation && (
+            <span className="suggest">Gaffer's pick · {formationLabel(card.formation)}</span>
+          )}
+        </div>
         <div className="formation-tabs">
           {FORMATION_KEYS.map((k) => (
             <button

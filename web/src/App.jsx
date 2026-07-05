@@ -39,7 +39,7 @@ export default function App() {
 
   return (
     <div className="stage">
-      <div className="phone">
+      <div className="app">
         <TopBar theme={theme} onToggleTheme={toggleTheme} />
 
         {tab === 'match' && view === 'home' && (

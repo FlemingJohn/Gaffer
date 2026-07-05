@@ -64,9 +64,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ===== App shell: a phone-sized column centred on a pitch backdrop ===== */
+/* ===== App shell — responsive =====
+   Mobile-first: full-bleed single column with a bottom nav.
+   Desktop (>=860px): an app-shell grid with a left nav rail + centred content. */
 .stage {
-  min-height: 100%;
+  min-height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: stretch;
@@ -78,25 +80,66 @@ body {
     var(--pitch);
 }
 
-.phone {
+.app {
   position: relative;
   width: 100%;
-  max-width: 420px;
+  min-height: 100dvh;
   background: var(--pitch);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 0 60px var(--shadow);
 }
 
 .screen {
   flex: 1;
   overflow-y: auto;
   padding: var(--pad);
-  padding-bottom: 96px; /* clear the nav */
+  padding-bottom: 96px; /* clear the fixed bottom nav on mobile */
   display: flex;
   flex-direction: column;
   gap: var(--gap);
+}
+
+@media (min-width: 860px) {
+  .stage { padding: 28px; }
+  .app {
+    max-width: 1120px;
+    min-height: calc(100dvh - 56px);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 24px 70px var(--shadow);
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'top top'
+      'nav main';
+  }
+  .topbar { grid-area: top; }
+  .nav { grid-area: nav; }
+  .screen {
+    grid-area: main;
+    padding: 28px;
+    align-items: center; /* centre the content column in the wide pane */
+  }
+  .screen > * { width: 100%; max-width: 760px; }
+
+  /* nav becomes a vertical left rail */
+  .nav {
+    position: static;
+    grid-template-columns: 1fr;
+    align-content: start;
+    border-top: none;
+    border-right: 1px solid var(--line);
+    padding-top: 10px;
+  }
+  .nav button {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 14px 22px;
+    font-size: 15px;
+  }
+  .nav button.active::after { top: 22%; left: 0; width: 3px; height: 56%; }
 }
 
 /* ===== Typography helpers ===== */

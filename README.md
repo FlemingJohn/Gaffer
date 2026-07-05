@@ -171,8 +171,10 @@ The layering keeps the QVAC SDK touched in exactly one place
 | `data/training/` | Season observations (fine-tune source) |
 
 ### Frontend
-Mobile-first, football-themed (Floodlit + Daylight themes, booking-card severity
-colours, matchday-condensed type). Pages: **Match** (hold-to-speak), **Capture**
+Responsive (full-screen single column + bottom nav on mobile; app-shell grid with
+a left nav rail + centred content on desktop), football-themed (Floodlit +
+Daylight themes, booking-card severity colours, matchday-condensed type). Pages:
+**Match** (hold-to-speak), **Capture**
 overlay (live transcription + signals), **Half-Time Card** (renders the engine's
 JSON) with a **dynamic tactics board** that auto-picks the formation and draws a
 movement arrow per adjustment, **Team** (squad + on-device train + before/after),

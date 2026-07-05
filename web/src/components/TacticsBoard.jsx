@@ -48,6 +48,8 @@ function Markings() {
 export default function TacticsBoard({ formation = '4-4-2-diamond', names = {}, arrows = [], title }) {
   const positions = FORMATIONS[formation] || FORMATIONS['4-4-2-diamond'];
   const pt = (i) => ({ x: px(positions[i].x), y: py(positions[i].y) });
+  // an arrow endpoint may be a position index or a normalized {x,y} point
+  const resolve = (t) => (typeof t === 'number' ? pt(t) : { x: px(t.x), y: py(t.y) });
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={`${formation} formation`}>
@@ -67,8 +69,8 @@ export default function TacticsBoard({ formation = '4-4-2-diamond', names = {}, 
       {/* movement arrows */}
       <g>
         {arrows.map((a, i) => {
-          const from = pt(a.from);
-          const to = pt(a.to);
+          const from = resolve(a.from);
+          const to = resolve(a.to);
           return (
             <line
               key={i}

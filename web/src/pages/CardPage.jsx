@@ -1,27 +1,24 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import HalfTimeCard from '../components/HalfTimeCard.jsx';
 import TacticsBoard from '../components/TacticsBoard.jsx';
-import { CARD } from '../data/sample.js';
+import { CARD, TEAM } from '../data/sample.js';
 import { FORMATION_KEYS, formationLabel } from '../data/formations.js';
+import { deriveBoard } from '../lib/board.js';
 
-// Illustrative squad mapping for the diamond (role#index → name).
-const DIAMOND_NAMES = {
-  'LB#1': 'Tom', 'CB#2': 'Sam', 'CB#3': 'Daniel', 'RB#4': 'Kai',
-  'DM#5': 'Marcus', 'CM#6': 'Aisha', 'AM#8': 'Leo', 'ST#9': 'Ben',
-};
-
-export default function CardPage({ onBack }) {
-  const [formation, setFormation] = useState('4-4-2-diamond');
-  const isDiamond = formation === '4-4-2-diamond';
+export default function CardPage({ onBack, card = CARD, speak }) {
+  // Board is derived from the card + the team's shape: formation, names, arrows.
+  const board = useMemo(() => deriveBoard(card, TEAM), [card]);
+  const [formation, setFormation] = useState(board.formation);
+  const showTeam = formation === board.formation; // names/arrows only fit the real shape
 
   return (
     <div className="screen">
       <div className="section-title">
         <button className="btn btn-ghost" style={{ padding: '6px 4px' }} onClick={onBack}>◀ Back</button>
-        <button className="btn btn-ghost" style={{ padding: '6px 4px' }}>🔊 Read aloud</button>
+        <button className="btn btn-ghost" style={{ padding: '6px 4px' }} onClick={() => speak?.(card)}>🔊 Read aloud</button>
       </div>
 
-      <HalfTimeCard card={CARD} />
+      <HalfTimeCard card={card} />
 
       <div className="card">
         <span className="eyebrow">Shape &amp; movement</span>
@@ -39,9 +36,16 @@ export default function CardPage({ onBack }) {
         <TacticsBoard
           formation={formation}
           title={formationLabel(formation)}
-          names={isDiamond ? DIAMOND_NAMES : {}}
-          arrows={isDiamond ? [{ from: 8, to: 5 }] : []}
+          names={showTeam ? board.names : {}}
+          arrows={showTeam ? board.arrows : []}
         />
+        {showTeam && board.arrows.length > 0 && (
+          <div className="board-key">
+            {board.arrows.map((a, i) => (
+              <span key={i} className="ptoken">→ {a.label}</span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="btn-row">

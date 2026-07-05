@@ -7,6 +7,10 @@ export const TEAM = {
   seasonNotes: 12,
   lastTrained: '3 days ago',
   adapterActive: true,
+  // The shape Gaffer knows this team plays, and where each player sits
+  // (roster maps a name -> index into FORMATIONS[formation]). Drives the board.
+  formation: '4-4-2-diamond',
+  roster: { Tom: 1, Sam: 2, Daniel: 3, Kai: 4, Marcus: 5, Aisha: 6, Leo: 8, Ben: 9 },
 };
 
 export const MATCH = {

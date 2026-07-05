@@ -290,6 +290,7 @@ body {
   background: var(--touchline); border: 1px solid var(--line); color: var(--chalk-dim);
 }
 .ftab.on { background: var(--volt); color: var(--volt-ink); border-color: var(--volt); }
+.board-key { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
 /* ===== Capture overlay ===== */
 .overlay { position: absolute; inset: 0; background: color-mix(in srgb, var(--pitch) 94%, black); z-index: 20; display: flex; flex-direction: column; padding: var(--pad); gap: var(--gap); }

@@ -99,7 +99,7 @@ body {
   gap: var(--gap);
 }
 
-@media (min-width: 860px) {
+@media (min-width: 720px) {
   .stage { padding: 28px; }
   .app {
     max-width: 1120px;
@@ -345,8 +345,8 @@ body {
 .board-key { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 /* card + tactics board: stacked on mobile, side-by-side on desktop */
 .card-panes { display: grid; gap: 16px; width: 100%; }
-@media (min-width: 900px) {
-  .card-panes { grid-template-columns: minmax(0, 1fr) 400px; align-items: start; }
+@media (min-width: 860px) {
+  .card-panes { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; }
 }
 /* keep the pitch a sensible size even in a wide column (full width on mobile) */
 .tactics { max-width: 400px; margin: 12px auto 0; }

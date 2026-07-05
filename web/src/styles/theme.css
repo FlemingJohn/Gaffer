@@ -99,49 +99,9 @@ body {
   gap: var(--gap);
 }
 
-@media (min-width: 720px) {
-  .stage { padding: 28px; }
-  .app {
-    max-width: 1120px;
-    min-height: calc(100dvh - 56px);
-    border-radius: 22px;
-    overflow: hidden;
-    box-shadow: 0 24px 70px var(--shadow);
-    display: grid;
-    grid-template-columns: 240px 1fr;
-    grid-template-rows: auto 1fr;
-    grid-template-areas:
-      'top top'
-      'nav main';
-  }
-  .topbar { grid-area: top; }
-  .nav { grid-area: nav; }
-  .screen {
-    grid-area: main;
-    padding: 36px;
-    gap: 20px;
-    align-items: center; /* centre the content column in the wide pane */
-  }
-  .screen > * { width: 100%; max-width: 980px; }
-
-  /* nav becomes a vertical left rail */
-  .nav {
-    position: static;
-    grid-template-columns: 1fr;
-    align-content: start;
-    border-top: none;
-    border-right: 1px solid var(--line);
-    padding-top: 10px;
-  }
-  .nav button {
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 12px;
-    padding: 14px 22px;
-    font-size: 15px;
-  }
-  .nav button.active::after { top: 22%; left: 0; width: 3px; height: 56%; }
-}
+/* NOTE: the desktop layout media query lives at the END of this file so its
+   overrides beat the base component rules (media queries add no specificity —
+   source order breaks the tie). */
 
 /* ===== Typography helpers ===== */
 .display {
@@ -343,11 +303,8 @@ body {
   border: 1px solid var(--card-edge); color: var(--chalk);
 }
 .board-key { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-/* card + tactics board: stacked on mobile, side-by-side on desktop */
+/* card + tactics board: stacked on mobile; two-pane rule is at end of file */
 .card-panes { display: grid; gap: 16px; width: 100%; }
-@media (min-width: 860px) {
-  .card-panes { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; }
-}
 /* keep the pitch a sensible size even in a wide column (full width on mobile) */
 .tactics { max-width: 400px; margin: 12px auto 0; }
 .tactics svg { display: block; width: 100%; }
@@ -359,4 +316,54 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .mic.listening, .wave span { animation: none; }
+}
+
+/* ===== Desktop layout (kept LAST so it overrides base component rules) ===== */
+@media (min-width: 720px) {
+  .stage { padding: 28px; }
+  .app {
+    max-width: 1120px;
+    min-height: calc(100dvh - 56px);
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 24px 70px var(--shadow);
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'top top'
+      'nav main';
+  }
+  .topbar { grid-area: top; }
+  .screen {
+    grid-area: main;
+    padding: 36px;
+    gap: 20px;
+    align-items: center; /* centre the content column in the wide pane */
+  }
+  .screen > * { width: 100%; max-width: 980px; }
+
+  /* nav becomes a vertical left rail */
+  .nav {
+    grid-area: nav;
+    position: static;
+    grid-template-columns: 1fr;
+    align-content: start;
+    border-top: none;
+    border-right: 1px solid var(--line);
+    padding-top: 10px;
+  }
+  .nav button {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 14px 22px;
+    font-size: 15px;
+  }
+  .nav button.active::after { top: 22%; left: 0; width: 3px; height: 56%; }
+}
+
+/* card + tactics board side-by-side on desktop */
+@media (min-width: 860px) {
+  .card-panes { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; }
 }

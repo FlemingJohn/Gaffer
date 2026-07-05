@@ -118,10 +118,11 @@ body {
   .nav { grid-area: nav; }
   .screen {
     grid-area: main;
-    padding: 28px;
+    padding: 36px;
+    gap: 20px;
     align-items: center; /* centre the content column in the wide pane */
   }
-  .screen > * { width: 100%; max-width: 760px; }
+  .screen > * { width: 100%; max-width: 900px; }
 
   /* nav becomes a vertical left rail */
   .nav {
@@ -334,6 +335,9 @@ body {
 }
 .ftab.on { background: var(--volt); color: var(--volt-ink); border-color: var(--volt); }
 .board-key { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+/* keep the pitch a sensible size even in a wide column (full width on mobile) */
+.tactics { max-width: 400px; margin: 12px auto 0; }
+.tactics svg { display: block; width: 100%; }
 
 /* ===== Capture overlay ===== */
 .overlay { position: absolute; inset: 0; background: color-mix(in srgb, var(--pitch) 94%, black); z-index: 20; display: flex; flex-direction: column; padding: var(--pad); gap: var(--gap); }

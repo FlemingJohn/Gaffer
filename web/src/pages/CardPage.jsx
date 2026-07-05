@@ -33,12 +33,14 @@ export default function CardPage({ onBack, card = CARD, speak }) {
             </button>
           ))}
         </div>
-        <TacticsBoard
-          formation={formation}
-          title={formationLabel(formation)}
-          names={showTeam ? board.names : {}}
-          arrows={showTeam ? board.arrows : []}
-        />
+        <div className="tactics">
+          <TacticsBoard
+            formation={formation}
+            title={formationLabel(formation)}
+            names={showTeam ? board.names : {}}
+            arrows={showTeam ? board.arrows : []}
+          />
+        </div>
         {showTeam && board.arrows.length > 0 && (
           <div className="board-key">
             {board.arrows.map((a, i) => (

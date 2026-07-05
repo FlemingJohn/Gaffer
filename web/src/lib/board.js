@@ -1,25 +1,66 @@
 // Derive a tactics board from a Half-Time Card + the team's known shape:
 // auto-pick the formation, label players by name, and turn each adjustment into
-// a movement arrow (direction inferred from the coaching verbs). Deterministic,
-// offline — no model call.
+// a movement arrow. Deterministic, offline — no model call.
 
 import { FORMATIONS } from '../data/formations.js';
 
 const clamp = (v) => Math.max(0.05, Math.min(0.95, v));
 
-// Map coaching language -> a movement vector in normalized pitch space
-// (x: left→right, y: own-goal→opponent-goal).
-function directionFor(text, base) {
+// Map a position keyword in the advice → the role(s) to target (first that
+// exists in the current formation). Lets arrows work when the card names a
+// position ("drop the back line") rather than a player.
+const ROLE_MAP = [
+  [/\b(left.?back|lb)\b/, ['LB']],
+  [/\b(right.?back|rb)\b/, ['RB']],
+  [/\b(cent(er|re).?back|cb|back line|back four|defen[cs]e)\b/, ['CB']],
+  [/\b(defensive mid|holding|screen|dm)\b/, ['DM', 'CM']],
+  [/\b(attacking mid|number ten|am)\b/, ['AM', 'CM']],
+  [/\b(wing|winger|lw|rw|wide)\b/, ['LW', 'RW', 'CM']],
+  [/\b(strik|forward|st|up top)\b/, ['ST']],
+  [/\b(midfield|midfielder|cm)\b/, ['CM', 'DM', 'AM']],
+  [/\b(keeper|goalkeeper|gk)\b/, ['GK']],
+];
+
+function findRoleIndex(text, positions) {
   const t = text.toLowerCase();
+  for (const [re, roles] of ROLE_MAP) {
+    if (re.test(t)) {
+      for (const role of roles) {
+        const i = positions.findIndex((p) => p.role === role);
+        if (i >= 0) return { i, label: role };
+      }
+    }
+  }
+  return null;
+}
+
+const BACK = new Set(['drop', 'deeper', 'sit', 'tuck', 'screen', 'recover']);
+const FWD = new Set(['push', 'higher', 'step', 'join', 'advance', 'overlap', 'forward', 'press']);
+
+// Vertical intent comes from the FIRST directional verb in the action (the
+// imperative), so a stray "the drop" in the rationale can't flip it.
+function verticalFrom(action) {
+  for (const w of action.toLowerCase().split(/\W+/)) {
+    if (BACK.has(w)) return -0.16;
+    if (FWD.has(w)) return 0.16;
+  }
+  return 0;
+}
+
+// Infer ONE dominant movement. Opponent references ("their right winger") are
+// stripped before reading left/right so they don't hijack the arrow.
+function directionFor(action, base) {
+  const a = action.toLowerCase();
+  const ours = a.replace(/\b(their|them|they|opposition|opponent)\b[^.,;]*/g, ' ');
+
+  let dy = verticalFrom(action);
+
   let dx = 0;
-  let dy = 0;
-  if (/\b(drop|deeper|drop back|stay home|sit|screen|tuck)\b/.test(t)) dy -= 0.13;
-  if (/\b(push|higher|step up|forward|press high|join)\b/.test(t)) dy += 0.13;
-  if (/\b(double up|overload|left)\b/.test(t)) dx -= 0.12;
-  if (/\bright\b/.test(t)) dx += 0.12;
-  if (/\b(switch|across|far side|other side)\b/.test(t)) dx += base.x < 0.5 ? 0.22 : -0.22;
-  if (/\boverlap\b/.test(t)) { dy += 0.12; dx += base.x < 0.5 ? -0.06 : 0.06; }
-  if (dx === 0 && dy === 0) dy += 0.08; // generic nudge forward
+  if (/\b(switch|across|far side|other side)\b/.test(a)) dx = base.x < 0.5 ? 0.2 : -0.2;
+  else if (/\bleft\b|double up|overload/.test(ours)) dx = -0.16;
+  else if (/\bright\b/.test(ours)) dx = 0.16;
+
+  if (dx === 0 && dy === 0) dy = 0.1; // generic nudge forward
   return { dx, dy };
 }
 
@@ -33,23 +74,33 @@ export function deriveBoard(card, team) {
   const positions = FORMATIONS[formation] || [];
   const roster = team?.roster || {};
 
-  // label each occupied position with its player's name
   const names = {};
   for (const [name, idx] of Object.entries(roster)) {
     const p = positions[idx];
     if (p) names[`${p.role}#${idx}`] = name;
   }
 
-  // one arrow per adjustment that names a known player
   const arrows = [];
   for (const adj of card?.adjustments || []) {
+    const text = `${adj.action} ${adj.rationale || ''}`;
+    // Prefer a named player we know; otherwise fall back to a position keyword.
     const player = (adj.players || []).find((p) => roster[p] != null);
-    if (player == null) continue;
-    const idx = roster[player];
+    let idx;
+    let label;
+    if (player != null) {
+      idx = roster[player];
+      label = player;
+    } else {
+      const hit = findRoleIndex(text, positions);
+      if (hit) {
+        idx = hit.i;
+        label = hit.label;
+      }
+    }
+    if (idx == null) continue;
     const base = positions[idx];
-    if (!base) continue;
-    const { dx, dy } = directionFor(`${adj.action} ${adj.rationale || ''}`, base);
-    arrows.push({ from: idx, to: { x: clamp(base.x + dx), y: clamp(base.y + dy) }, label: player });
+    const { dx, dy } = directionFor(adj.action || text, base);
+    arrows.push({ from: idx, to: { x: clamp(base.x + dx), y: clamp(base.y + dy) }, label });
   }
 
   return { formation, names, arrows };

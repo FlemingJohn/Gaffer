@@ -11,7 +11,7 @@
  */
 
 import { initEngine, loadNamedModel, shutdown } from '../src/core/engine.js';
-import { MODELS } from '../src/config/models.js';
+import { MODELS, FINETUNE } from '../src/config/models.js';
 import { runFinetune } from '../src/capabilities/finetune.js';
 import { createLogger } from '../src/core/logger.js';
 
@@ -21,20 +21,23 @@ async function main() {
   await initEngine();
   const modelId = await loadNamedModel(MODELS.llm, { label: 'base-llm' });
 
-  log.step('starting on-device fine-tune …');
+  log.info('──────── ON-DEVICE FINE-TUNE (LoRA) ────────');
+  log.step(`base=${MODELS.llm.constant} · dataset=${FINETUNE.datasetFile} · ${FINETUNE.numberOfEpochs} epochs`);
   let lastEpoch = -1;
   const { status, adapterPath } = await runFinetune({
     modelId,
     onTick: (t) => {
       if (t.is_train && t.current_epoch !== lastEpoch) {
         lastEpoch = t.current_epoch;
-        log.step(`epoch ${t.current_epoch + 1}/${MODELS.llm ? '' : ''}`);
+        log.step(`epoch ${t.current_epoch + 1}/${FINETUNE.numberOfEpochs}`);
       }
       if (t.loss != null && t.global_steps % 5 === 0) {
-        log.debug(`step ${t.global_steps} loss ${t.loss.toFixed(4)} eta ${Math.round((t.eta_ms || 0) / 1000)}s`);
+        const eta = Math.round((t.eta_ms || 0) / 1000);
+        log.info(`   ${t.is_train ? 'train' : 'val'} step ${t.global_steps} · loss ${t.loss.toFixed(4)}${t.accuracy != null ? ` · acc ${(t.accuracy * 100).toFixed(0)}%` : ''} · eta ${eta}s`);
       }
     },
   });
+  log.info('──────── FINE-TUNE COMPLETE ────────');
 
   log.ok(`done (status: ${status})`);
   if (adapterPath) log.ok(`Run: node src/index.js --adapter --demo`);

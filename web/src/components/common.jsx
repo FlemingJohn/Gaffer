@@ -22,10 +22,10 @@ export function TopBar({ theme, onToggleTheme, right }) {
   );
 }
 
-export function ScoreBar({ match }) {
+export function ScoreBar({ home, match }) {
   return (
     <div className="scorebar">
-      <div className="team home">{match.home}</div>
+      <div className="team home">{home}</div>
       <div className="score data">{match.homeScore}–{match.awayScore}</div>
       <div className="team away">{match.away}</div>
       <div className="phase">{match.phase}</div>

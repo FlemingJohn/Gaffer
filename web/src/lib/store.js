@@ -17,7 +17,7 @@ function load() {
 }
 
 function freshMatch(prev) {
-  return { home: prev?.home || 'Riverside', away: prev?.away || 'Opponent', homeScore: 0, awayScore: 0, phase: '1st half' };
+  return { away: prev?.away || 'Opponent', homeScore: 0, awayScore: 0, phase: '1st half' };
 }
 
 function resultOf(homeScore, awayScore) {
@@ -49,6 +49,8 @@ export function StoreProvider({ children }) {
         return { ...s, match: { ...s.match, [key]: Math.max(0, (s.match[key] || 0) + delta) } };
       }),
     setOpponent: (away) => setState((s) => ({ ...s, match: { ...s.match, away } })),
+    setTeamName: (name) =>
+      setState((s) => ({ ...s, team: { ...s.team, name: (name || '').trim() || s.team.name } })),
     newMatch: () => setState((s) => ({ ...s, match: freshMatch(s.match) })),
 
     addPlayer: (name) =>

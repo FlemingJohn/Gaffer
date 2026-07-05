@@ -3,7 +3,7 @@ import { useGaffer } from '../lib/store.js';
 import { FORMATION_KEYS, formationLabel } from '../data/formations.js';
 
 export default function TeamPage() {
-  const { team, addPlayer, removePlayer, setFormation } = useGaffer();
+  const { team, addPlayer, removePlayer, setFormation, setTeamName } = useGaffer();
   const [name, setName] = useState('');
   const [training, setTraining] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -31,9 +31,15 @@ export default function TeamPage() {
 
   return (
     <div className="screen">
-      <div className="section-title">
-        <h1 className="display" style={{ fontSize: 26 }}>{team.name}</h1>
-      </div>
+      <label className="field">
+        <span className="field-label">Team name</span>
+        <input
+          className="team-name-input"
+          value={team.name}
+          onChange={(e) => setTeamName(e.target.value)}
+          maxLength={40}
+        />
+      </label>
 
       <div>
         <span className="eyebrow">Squad · {team.squad.length}</span>

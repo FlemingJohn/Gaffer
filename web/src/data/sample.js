@@ -13,9 +13,9 @@ export const SEED_TEAM = {
   adapterActive: true,
 };
 
+// Home team name comes from the team profile; only the opponent + score live here.
 export const SEED_MATCH = {
-  home: 'Riverside',
-  away: 'Oakwood',
+  away: 'Opponent',
   homeScore: 0,
   awayScore: 0,
   phase: '1st half',

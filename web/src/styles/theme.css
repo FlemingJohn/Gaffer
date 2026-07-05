@@ -297,6 +297,16 @@ body {
 .nav button.active { color: var(--chalk); }
 .nav button.active::after { content: ''; position: absolute; top: 0; width: 40%; height: 3px; background: var(--volt); border-radius: 3px; }
 
+/* ===== Editable fields ===== */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-family: var(--font-display); font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; font-size: 12px; color: var(--chalk-dim); }
+.field input {
+  background: var(--touchline); border: 1px solid var(--line); border-radius: var(--r-card);
+  padding: 12px 16px; color: var(--chalk); font-family: var(--font-body); font-size: 16px; width: 100%;
+}
+.field input:focus-visible { outline: 2px solid var(--volt); }
+.team-name-input { font-family: var(--font-display); font-weight: 800; font-size: 22px; text-transform: uppercase; letter-spacing: 0.02em; }
+
 /* ===== Match controls (score steppers + phase) ===== */
 .score-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .stepper {

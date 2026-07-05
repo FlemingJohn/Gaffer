@@ -5,23 +5,29 @@ import { useGaffer } from '../lib/store.js';
 const PHASES = ['1st half', 'Half-time', '2nd half', 'Full-time'];
 
 export default function MatchHome({ onRecord }) {
-  const { team, match, setPhase, bumpScore } = useGaffer();
+  const { team, match, setPhase, bumpScore, setOpponent } = useGaffer();
 
   return (
     <div className="screen">
-      <ScoreBar match={match} />
+      <ScoreBar home={team.name} match={match} />
+
+      {/* who we're playing — editable, no more hardcoded opponent */}
+      <label className="field">
+        <span className="field-label">Opponent</span>
+        <input value={match.away} onChange={(e) => setOpponent(e.target.value)} placeholder="Opponent name" maxLength={24} />
+      </label>
 
       {/* the coach sets score + phase — the app doesn't guess them */}
       <div className="score-controls">
         <div className="stepper">
-          <button onClick={() => bumpScore('home', -1)} aria-label="home minus">−</button>
-          <span>{match.home}</span>
-          <button onClick={() => bumpScore('home', 1)} aria-label="home plus">+</button>
+          <button onClick={() => bumpScore('home', -1)} aria-label="our score minus">−</button>
+          <span title={team.name}>{team.name}</span>
+          <button onClick={() => bumpScore('home', 1)} aria-label="our score plus">+</button>
         </div>
         <div className="stepper">
-          <button onClick={() => bumpScore('away', -1)} aria-label="away minus">−</button>
-          <span>{match.away}</span>
-          <button onClick={() => bumpScore('away', 1)} aria-label="away plus">+</button>
+          <button onClick={() => bumpScore('away', -1)} aria-label="their score minus">−</button>
+          <span title={match.away}>{match.away}</span>
+          <button onClick={() => bumpScore('away', 1)} aria-label="their score plus">+</button>
         </div>
       </div>
 
@@ -41,9 +47,9 @@ export default function MatchHome({ onRecord }) {
       <div className="mic-wrap">
         <button className="mic" onClick={onRecord}>
           <span className="glyph"><IconMic /></span>
-          Hold to speak
+          Tap to speak
         </button>
-        <p className="mic-caption">Tap and tell me what you're seeing on the pitch.</p>
+        <p className="mic-caption">Tap, then tell me what you're seeing on the pitch.</p>
       </div>
     </div>
   );

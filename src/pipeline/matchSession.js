@@ -36,8 +36,11 @@ const log = createLogger('session');
  * @returns {Promise<{ signals: object[], grounding: {title:string,text:string,score:number}[], card: import('../domain/schema.js').HalftimeCardT }>}
  */
 export async function runMatchSession({ observation, llmModelId, retriever, topK = 3 }) {
+  log.info('──────── RAG PIPELINE ────────');
+  log.info(`observation: "${observation}"`);
+
   // 1) Distil the rambling observation into structured tactical signals.
-  log.step('extracting tactical signals …');
+  log.step('[1/3] LLM signal extraction (Qwen3 + json_schema) …');
   const signalsRaw = await completeStructured({
     modelId: llmModelId,
     system: SIGNAL_EXTRACTION_SYSTEM,
@@ -45,16 +48,23 @@ export async function runMatchSession({ observation, llmModelId, retriever, topK
     jsonSchema: SIGNALS_JSON_SCHEMA,
   });
   const signals = safe(() => parseSignals(signalsRaw), []);
-  log.ok(`${signals.length} signal(s): ${signals.map((s) => s.pattern).join(', ') || '—'}`);
+  log.ok(`signals (${signals.length}):`);
+  for (const s of signals) {
+    log.info(`   • ${s.pattern}  [zone=${s.zone} phase=${s.phase} severity=${s.severity}]${s.players?.length ? ` players=${s.players.join(',')}` : ''}`);
+  }
 
-  // 2) Retrieve grounding from the tactical knowledge base.
-  log.step('retrieving grounding …');
+  // 2) Retrieve grounding from the tactical knowledge base (embed query + cosine).
   const query = ragQueryFromSignals(signals);
+  log.step(`[2/3] RAG retrieve — embed query + cosine over ${retriever.store.size} snippets`);
+  log.info(`   query: "${query}"`);
   const grounding = await retriever.retrieve(query, topK);
-  log.ok(`${grounding.length} snippet(s): ${grounding.map((g) => g.title).join(' · ') || '—'}`);
+  log.ok(`top ${grounding.length} by cosine similarity:`);
+  for (const g of grounding) {
+    log.info(`   ${g.score.toFixed(3)}  ${g.title}`);
+  }
 
   // 3) Compose the grounded Half-Time Card.
-  log.step('composing Half-Time Card …');
+  log.step('[3/3] LLM compose Half-Time Card (grounded, json_schema) …');
   const context = Retriever.toContext(grounding);
   const cardRaw = await completeStructured({
     modelId: llmModelId,
@@ -65,6 +75,9 @@ export async function runMatchSession({ observation, llmModelId, retriever, topK
   const card = parseHalftimeCard(cardRaw);
   // Trust the retriever, not the model's self-report, for what grounded the card.
   card.grounding = grounding.map((g) => g.title);
+  log.ok(`card: formation=${card.formation || '—'} · ${card.adjustments?.length || 0} adjustment(s) · confidence ${card.confidence}/5`);
+  log.info(`   summary: ${card.summary}`);
+  log.info('──────── END PIPELINE ────────');
 
   return { signals, grounding, card };
 }

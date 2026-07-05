@@ -282,6 +282,15 @@ body {
 .nav button.active { color: var(--chalk); }
 .nav button.active::after { content: ''; position: absolute; top: 0; width: 40%; height: 3px; background: var(--volt); border-radius: 3px; }
 
+/* ===== Formation selector ===== */
+.formation-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.ftab {
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  padding: 6px 11px; border-radius: var(--r-pill); cursor: pointer;
+  background: var(--touchline); border: 1px solid var(--line); color: var(--chalk-dim);
+}
+.ftab.on { background: var(--volt); color: var(--volt-ink); border-color: var(--volt); }
+
 /* ===== Capture overlay ===== */
 .overlay { position: absolute; inset: 0; background: color-mix(in srgb, var(--pitch) 94%, black); z-index: 20; display: flex; flex-direction: column; padding: var(--pad); gap: var(--gap); }
 

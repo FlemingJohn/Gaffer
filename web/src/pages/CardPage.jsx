@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
 import HalfTimeCard from '../components/HalfTimeCard.jsx';
 import TacticsBoard from '../components/TacticsBoard.jsx';
-import { CARD } from '../data/sample.js';
 import { FORMATION_KEYS, formationLabel } from '../data/formations.js';
 import { IconSpeaker, IconRedo, IconCheck } from '../components/icons.jsx';
 import { deriveBoard } from '../lib/board.js';
 import { useGaffer } from '../lib/store.js';
 
-export default function CardPage({ onBack, card = CARD, speak }) {
+export default function CardPage({ onBack, card, speak }) {
   const { team, saveMatch } = useGaffer();
   // The AI picks a formation on the card; default the board to it (fall back to
   // the team's usual shape). The tabs let you override what's rendered.

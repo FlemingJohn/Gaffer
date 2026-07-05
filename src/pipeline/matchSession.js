@@ -54,7 +54,9 @@ export async function runMatchSession({ observation, llmModelId, retriever, topK
   }
 
   // 2) Retrieve grounding from the tactical knowledge base (embed query + cosine).
-  const query = ragQueryFromSignals(signals);
+  // Lead with the coach's own words (natural language embeds closer to the
+  // corpus text) and append the structured signal tags as a keyword boost.
+  const query = [observation, ragQueryFromSignals(signals)].filter(Boolean).join('. ');
   log.step(`[2/3] RAG retrieve — embed query + cosine over ${retriever.store.size} snippets`);
   log.info(`   query: "${query}"`);
   const grounding = await retriever.retrieve(query, topK);

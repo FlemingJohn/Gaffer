@@ -26,7 +26,7 @@ export default function MatchHome({ onRecord }) {
         </div>
         <div className="stepper">
           <button onClick={() => bumpScore('away', -1)} aria-label="their score minus">−</button>
-          <span title={match.away}>{match.away}</span>
+          <span title={match.away}>{match.away || 'Opponent'}</span>
           <button onClick={() => bumpScore('away', 1)} aria-label="their score plus">+</button>
         </div>
       </div>

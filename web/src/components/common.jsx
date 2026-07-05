@@ -27,7 +27,7 @@ export function ScoreBar({ home, match }) {
     <div className="scorebar">
       <div className="team home">{home}</div>
       <div className="score data">{match.homeScore}–{match.awayScore}</div>
-      <div className="team away">{match.away}</div>
+      <div className="team away">{match.away || 'Opponent'}</div>
       <div className="phase">{match.phase}</div>
     </div>
   );

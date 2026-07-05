@@ -5,16 +5,18 @@ import MatchHome from './pages/MatchHome.jsx';
 import CardPage from './pages/CardPage.jsx';
 import TeamPage from './pages/TeamPage.jsx';
 import HistoryPage from './pages/HistoryPage.jsx';
-import { CARD } from './data/sample.js';
+import Onboarding from './components/Onboarding.jsx';
 import { health, tts } from './lib/api.js';
 import { cardToSpeech } from './lib/speech.js';
+import { useGaffer } from './lib/store.js';
 
 export default function App() {
+  const { onboarded } = useGaffer();
   const [theme, setTheme] = useState('floodlit');
   const [tab, setTab] = useState('match');
   const [view, setView] = useState('home'); // home | card (within Match tab)
   const [capturing, setCapturing] = useState(false);
-  const [card, setCard] = useState(CARD);
+  const [card, setCard] = useState(null);
   const [online, setOnline] = useState(false); // is the engine bridge reachable?
 
   useEffect(() => {
@@ -37,6 +39,8 @@ export default function App() {
     }
   }
 
+  if (!onboarded) return <Onboarding />;
+
   return (
     <div className="stage">
       <div className="app">
@@ -45,7 +49,7 @@ export default function App() {
         {tab === 'match' && view === 'home' && (
           <MatchHome onRecord={() => setCapturing(true)} />
         )}
-        {tab === 'match' && view === 'card' && (
+        {tab === 'match' && view === 'card' && card && (
           <CardPage card={card} speak={online ? speak : undefined} onBack={() => setView('home')} />
         )}
         {tab === 'history' && <HistoryPage />}
@@ -57,7 +61,8 @@ export default function App() {
             onCancel={() => setCapturing(false)}
             onDone={(resultCard) => {
               setCapturing(false);
-              setCard(resultCard || CARD);
+              if (!resultCard) return;
+              setCard(resultCard);
               setTab('match');
               setView('card');
             }}

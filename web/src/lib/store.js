@@ -5,7 +5,7 @@
 import { createContext, createElement, useContext, useEffect, useState } from 'react';
 import { SEED_TEAM, SEED_MATCH } from '../data/sample.js';
 
-const KEY = 'gaffer-state-v2';
+const KEY = 'gaffer-state-v3';
 
 function load() {
   try {
@@ -17,7 +17,7 @@ function load() {
 }
 
 function freshMatch(prev) {
-  return { away: prev?.away || 'Opponent', homeScore: 0, awayScore: 0, phase: '1st half' };
+  return { away: prev?.away || '', homeScore: 0, awayScore: 0, phase: '1st half' };
 }
 
 function resultOf(homeScore, awayScore) {
@@ -27,7 +27,7 @@ function resultOf(homeScore, awayScore) {
 const Ctx = createContext(null);
 
 export function StoreProvider({ children }) {
-  const [state, setState] = useState(() => load() || { team: SEED_TEAM, match: SEED_MATCH, history: [] });
+  const [state, setState] = useState(() => load() || { team: SEED_TEAM, match: SEED_MATCH, history: [], onboarded: false });
 
   useEffect(() => {
     try {
@@ -41,6 +41,10 @@ export function StoreProvider({ children }) {
     team: state.team,
     match: state.match,
     history: state.history,
+    onboarded: state.onboarded,
+
+    finishOnboarding: (name) =>
+      setState((s) => ({ ...s, onboarded: true, team: { ...s.team, name: (name || '').trim() || s.team.name } })),
 
     setPhase: (phase) => setState((s) => ({ ...s, match: { ...s.match, phase } })),
     bumpScore: (side, delta) =>
@@ -68,7 +72,7 @@ export function StoreProvider({ children }) {
       setState((s) => {
         const { homeScore = 0, awayScore = 0, away } = s.match;
         const entry = {
-          opp: away,
+          opp: away || 'Opponent',
           score: `${homeScore}–${awayScore}`,
           result: resultOf(homeScore, awayScore),
           date: 'Just now',

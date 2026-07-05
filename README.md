@@ -134,6 +134,22 @@ sequenceDiagram
     Note over Coach: ~15 seconds, nothing left the device
 ```
 
+### How it runs (three tiers)
+QVAC only runs in Node, not the browser — so the app is a **React UI ↔ a thin
+Node bridge ↔ the QVAC engine**. The UI is a pure skin; all AI stays in Node,
+on-device.
+
+```
+Browser UI (web/, Vite + React, football theme)
+   │   hold-to-speak → mic → 16 kHz WAV
+   ▼   fetch /api (Vite proxies → :8787)
+Bridge server (src/server.js, Express)
+   │   /transcribe · /session · /tts · /health   (serialized model loads)
+   ▼
+QVAC engine (src/core/engine.js — the only SDK importer)
+   Whisper · Qwen3(+adapter) · GTE-Large RAG · Supertonic — all on-device
+```
+
 The layering keeps the QVAC SDK touched in exactly one place
 (`src/core/engine.js`); the football logic stays pure and testable.
 
@@ -142,13 +158,26 @@ The layering keeps the QVAC SDK touched in exactly one place
 |---|---|
 | `src/config/models.js` | All model constants + runtime config in one place |
 | `src/core/engine.js` | QVAC lifecycle: init / load / unload / shutdown (only SDK importer) |
-| `src/capabilities/*` | Thin, typed wrappers over QVAC SDK functions |
+| `src/capabilities/*` | Thin, typed wrappers over QVAC SDK functions (llm, embed, asr, tts, finetune) |
 | `src/rag/*` | Embedding-backed vector store + retriever (SDK-agnostic) |
 | `src/domain/*` | Football logic, prompts, Zod + JSON schemas, Card rendering (no SDK) |
 | `src/pipeline/matchSession.js` | Orchestrates the end-to-end flow |
-| `scripts/*` | Model pre-cache, corpus ingest, dataset build, fine-tune runner |
+| `src/server.js` | HTTP bridge exposing the engine to the browser |
+| `web/` | React + Vite frontend (football theme) |
+| `web/src/components/TacticsBoard.jsx` | Dynamic, data-driven pitch + formation + movement arrows |
+| `web/src/lib/*` | API client, mic recorder (→16 kHz WAV), card→speech, board derivation |
+| `scripts/*` | Model pre-cache, corpus ingest, dataset build, fine-tune, voice/image probes |
 | `data/corpus/` | Tactical knowledge base (RAG source) |
 | `data/training/` | Season observations (fine-tune source) |
+
+### Frontend
+Mobile-first, football-themed (Floodlit + Daylight themes, booking-card severity
+colours, matchday-condensed type). Pages: **Match** (hold-to-speak), **Capture**
+overlay (live transcription + signals), **Half-Time Card** (renders the engine's
+JSON) with a **dynamic tactics board** that auto-picks the formation and draws a
+movement arrow per adjustment, **Team** (squad + on-device train + before/after),
+and **History**. If the bridge isn't running it falls back to sample data so the
+UI still demos.
 
 ## Models
 All models resolve from the QVAC distributed registry (open GGUF weights,
@@ -161,10 +190,21 @@ run on-device.
 | Embeddings (RAG) | `GTE_LARGE_FP16` | 1024-dim vectors |
 | Speech-to-text | `WHISPER_TINY` | + Silero VAD for live mic |
 | Text-to-speech | `TTS_EN_SUPERTONIC_Q8_0` | 44.1 kHz PCM |
+| Image gen (optional) | `SDXL_BASE_1_0_3B_Q4_0` / `SD_V2_1_1B_Q4_0` | cosmetic only — team crest / pitch backdrop |
 
 Structured output uses QVAC's constrained `json_schema` response format, so even a
 small on-device model cannot emit an out-of-enum value or omit a required field;
 Zod then validates defensively after parsing.
+
+### On image generation (why the tactics board is SVG, not AI)
+QVAC's `diffusion()` runs image models on-device (tested on the Intel Arc GPU via
+Vulkan; SDXL fits 2 GB with `offload_to_cpu`). It's great for **cosmetic** output
+— a team crest or a pitch backdrop. But it **cannot draw an accurate formation**:
+prompted for a "4-4-2 diamond" it produces the *look* of a tactics board with the
+wrong number of players in random spots (it even rendered "diamond" as gemstones).
+A tactics board is a *precision* problem, not an art one, so it's drawn
+deterministically as **SVG** from the card data. Diffusion is reserved for the
+crest/backdrop.
 
 ## Performance note
 Everything except training is interactive (seconds): model load is a cached
@@ -194,7 +234,7 @@ The first model load downloads weights from the QVAC registry; after that it run
 fully offline. The first `loadModel` of a process can occasionally hit a worker
 cold-start timeout - the engine retries automatically.
 
-### CLI
+### CLI (engine only)
 ```bash
 node src/index.js "they're overloading our left and we're a goal down"
 node src/index.js --demo            # scripted demo observation
@@ -203,13 +243,40 @@ node src/index.js --voice clip.wav  # transcribe a WAV, then advise
 node src/index.js --speak "..."     # also synthesize a spoken card (data/cache/*.wav)
 ```
 
+### Run the full app (UI + voice)
+Two processes — the bridge (Node/engine) and the Vite UI:
+
+```bash
+# terminal 1 — engine bridge (warms the worker, then serves /api on :8787)
+npm run server
+
+# terminal 2 — football-themed UI (proxies /api to the bridge)
+cd web && npm install && npm run dev   # http://localhost:5173
+```
+
+Open **http://localhost:5173**, allow the microphone, and hold-to-speak: it
+transcribes (Whisper) → advises (RAG + Qwen3) → renders the Half-Time Card and
+tactics board → "Read aloud" speaks it back (Supertonic). All on-device.
+
+Handy probes: `node scripts/test-voice.js` (TTS→ASR round-trip),
+`node scripts/test-diffusion.js` (image-model output).
+
 ## Status
-Backend engine works end-to-end on-device: observation -> tactical signals -> RAG
-grounding -> Half-Time Card, with optional spoken read-back. On-device LoRA
-fine-tuning completes and produces a team adapter that shifts card output toward
-named players. Frontend intentionally deferred. Mobile (Expo) is a stretch - the
-same QVAC code targets iOS/Android, but desktop Node is the build target for the
-sprint (no mobile emulator support).
+Working end-to-end, on-device:
+- **Engine** — observation → tactical signals → RAG grounding → Half-Time Card.
+- **Voice** — Whisper (STT) + Supertonic (TTS) downloaded and verified (TTS→ASR
+  round-trip returns the input text).
+- **Bridge** — `/health`, `/session`, `/tts`, `/transcribe` all live; model loads
+  serialized so concurrent requests don't race the single Bare worker.
+- **Frontend** — React football UI wired to the bridge (live voice in/out) with a
+  dynamic tactics board driven by the card data.
+- **Fine-tuning** — on-device LoRA completes and produces a team adapter that
+  shifts card output toward named players.
+
+Known limitation: on the small on-device LLM (1.7B) card phrasing is occasionally
+clumsy — an inherent model-size trade-off, not an integration gap. Mobile (Expo)
+is a stretch — the same QVAC code targets iOS/Android, but desktop Node is the
+build target for the sprint (no mobile emulator support).
 
 ## License
 Apache-2.0.

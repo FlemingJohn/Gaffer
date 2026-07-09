@@ -309,7 +309,7 @@ flowchart LR
     JSONL --> TRAIN
     BASE --> TRAIN
     TRAIN --> OUT
-    OUT -. hot-loaded via modelConfig.lora .-> LLM
+    OUT -.->|"hot-loaded via modelConfig.lora"| LLM
 ```
 
 - **LoRA, not full retraining.** Instead of rewriting the whole 1.7B model
